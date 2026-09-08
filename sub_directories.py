@@ -7,8 +7,11 @@ class SubDirectoriesHandler:
         for directory in self._directories:
             self.process_sub_directory(directory_name=directory)
 
+    def get_sub_directory(self, directory_name: str) -> Path:
+        return self._parent_folder / directory_name;
+
     def process_sub_directory(self, directory_name: str) -> None:
-        directory_path = self._parent_folder / directory_name;
+        directory_path = self.get_sub_directory(directory_name)
         if (directory_path.exists()):
             return
         # doesn't exist, make it, it is save to retrieve later. 
