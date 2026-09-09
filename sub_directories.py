@@ -10,6 +10,13 @@ class SubDirectoriesHandler:
     def get_sub_directory(self, directory_name: str) -> Path:
         return self._parent_folder / directory_name;
 
+    def get_sub_directories(self) -> list[Path]:
+        sub_directories: list[Path] = []
+        for directory in self._directories:
+            directory_path = self.get_sub_directory(directory)
+            sub_directories.append(directory_path)
+        return sub_directories        
+
     def process_sub_directory(self, directory_name: str) -> None:
         directory_path = self.get_sub_directory(directory_name)
         if (directory_path.exists()):

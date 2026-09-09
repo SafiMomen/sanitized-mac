@@ -1,34 +1,191 @@
-from pathlib import Path;
-from sub_directories import *;
-from weak_file_detection import *;
-from weak_watchdog import *;
-import shutil;
+from pathlib import Path
+import tkinter
+from tkinter import messagebox
+import shutil
 
-observing_path_folder = Path("./test_downloads")
-folder_items = list(observing_path_folder.iterdir())
+from textual import work
+from textual.app import App, ComposeResult
+from textual.widgets import Input, Log, Static
 
-# %unsorted: doesn't attempt sort on files, used for user convenience.
-# %sort: putting files in this folder causes item to auto sort
-# %unknwon: the file type couldn't be determined. 
-sub_directories = ["%sort", "%unknown", "%unsorted"]
-#TODO: add custom file type implementation
-for file_type, suffixes in SUPPORTED_SUFFIXES.items():
-    sub_directories.append(("%" + file_type));
+from sub_directories import SubDirectoriesHandler
+from weak_file_detection import *
+from weak_watchdog import DirectoryWatchdog
+from style import WINDOW_STYLING
 
-sub_directory_handler = SubDirectoriesHandler(
-    observing_path_folder,
-    sub_directories
-);
+class FileJanitorApp(App):
+    CSS = WINDOW_STYLING;
+    BINDINGS = [
+        ("super+s,ctrl+s", "start", "Start"),
+        ("super+e,ctrl+e", "stop", "Stop"),
+        ("ctrl+q", "quit", "Quit"),
+        ("super+l,ctrl+l", "sanitize", "Sanitize")
+    ]
+    # greater than 2 gigabytes is a risk to move 
+    # as it can be interrupted and hence corrupted.
+    LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
-def file_ready_for_processing(item_file: Path) -> None:
-    print("[debug]::attempting file allocation.");
-    file_type = get_file_type(item_file);
-    destination = sub_directory_handler.get_sub_directory(("%" + file_type))
-    shutil.move(item_file, destination);
-    
-directory_watchdog = DirectoryWatchdog(
-    "%sort", 
-    sub_directory_handler,
-    file_processed=file_ready_for_processing
-);
-directory_watchdog.start_polling();
+    def __init__(self) -> None:
+        super().__init__()
+        self._sub_directory_handler: SubDirectoriesHandler | None = None
+        self._directory_watchdog: DirectoryWatchdog | None = None
+
+    def compose(self) -> ComposeResult:
+        yield Static("sanitized-os\n", id="title")
+        yield Input(placeholder="parent directory: ~/Downloads", id="path")
+        yield Static("[⌘S] start   [⌘X] stop   [⌃Q] quit   [⌘L] sanitize\n", id="bindings")
+        yield Static("status: stopped", id="status")
+        yield Log(id="log")
+
+    def _confirm_large_file_move(self, item_file: Path, destination: Path) -> bool:
+        file_size_mb = item_file.stat().st_size / (1024 * 1024)
+
+        root = tkinter.Tk()
+        root.withdraw()
+
+        should_move = messagebox.askyesno(
+            "Large File",
+            (
+                f"{item_file.name} is {file_size_mb:.2f} MB.\n\n"
+                f"Move it to {destination.name}?"
+            ),
+        )
+        root.destroy()
+        return should_move
+
+    def action_sanitize(self) -> None:
+        path_input = self.query_one("#path", Input)
+        sanitizing_path_folder_input = path_input.value.strip()
+        if (not sanitizing_path_folder_input):
+            self._log("(error) enter a parent directory")
+            return
+
+        sanitizing_path_folder = Path(
+            sanitizing_path_folder_input
+        ).expanduser()
+
+        if (not sanitizing_path_folder.is_dir()):
+            self._log(f"(error) invalid directory: {sanitizing_path_folder}")
+            return
+        self._log(f"(program) attempting to sanitize: {sanitizing_path_folder}")
+
+        sub_directories = ["%sort", "%unknown", "%unsorted"]
+        for file_type, suffixes in SUPPORTED_SUFFIXES.items():
+            sub_directories.append("%" + file_type)
+
+        self._sub_directory_handler = SubDirectoriesHandler(
+            sanitizing_path_folder,
+            sub_directories,
+        )
+
+        files = [
+            item_file
+            for item_file in sanitizing_path_folder.iterdir()
+            if item_file.is_file()
+        ]
+        for item_file in files:
+            file_type = get_file_type(item_file)
+            destination = self._sub_directory_handler.get_sub_directory("%" + file_type)
+
+            if (is_temporary_item(item_file)): continue
+
+            if (item_file.stat().st_size >= self.LARGE_FILE_SIZE):
+                should_move = self._confirm_large_file_move(
+                    item_file,
+                    destination,
+                )
+                if (not should_move):
+                    self._log(f"(program) skipped large file: {item_file.name}")
+                    continue
+
+            shutil.move(item_file, destination)
+
+            self._file_moved(item_file, destination)
+
+        self._log(f"(program) sanitize complete")
+
+
+    def action_start(self) -> None:
+        path_input = self.query_one("#path", Input)
+        observing_path_folder_input = path_input.value.strip()
+
+        if (not observing_path_folder_input):
+            self._log("(error) enter a parent directory")
+            return
+
+        observing_path_folder = Path(
+            observing_path_folder_input
+        ).expanduser()
+
+        if (not observing_path_folder.is_dir()):
+            self._log(f"(error) invalid directory: {observing_path_folder}")
+            return
+
+        sub_directories = ["%sort", "%unknown", "%unsorted"]
+        for file_type, suffixes in SUPPORTED_SUFFIXES.items():
+            sub_directories.append("%" + file_type)
+
+        self._sub_directory_handler = SubDirectoriesHandler(
+            observing_path_folder,
+            sub_directories,
+        )
+        self._directory_watchdog = DirectoryWatchdog(
+            "%sort",
+            self._sub_directory_handler,
+            file_processed=self._file_ready_for_processing,
+        )
+
+        self.query_one("#status", Static).update(
+            f"status: watching {observing_path_folder / '%sort'}"
+        )
+        self._log(f"(program) watching {observing_path_folder / '%sort'}")
+
+        self._start_watchdog()
+
+    #otherwise the application would stop since we are running 
+    #on a while loop that sleeps the thread. 
+    @work(thread=True) 
+    def _start_watchdog(self) -> None:
+        if (self._directory_watchdog is None):
+            return
+
+        self._directory_watchdog.start_polling()
+
+    def action_stop(self) -> None:
+        if (self._directory_watchdog is None): 
+            self._log(f"(error) no files are being watched")
+            return
+
+        self._directory_watchdog.stop_polling()
+        self._directory_watchdog = None
+
+        self.query_one("#status", Static).update("status: stopped")
+        self._log("(program) watchdog stopped")
+
+    def action_quit(self) -> None:
+        if (self._directory_watchdog is not None):
+            self._directory_watchdog.stop_polling()
+        # quit the application, user doesn't want to run in the background. 
+        self.exit()
+
+    def _file_ready_for_processing(self, item_file: Path) -> None:
+        if (self._sub_directory_handler is None): return
+
+        file_type = get_file_type(item_file)
+        destination = (self._sub_directory_handler.get_sub_directory(("%" + file_type)))
+        shutil.move(item_file, destination)
+
+        self.call_from_thread(
+            self._file_moved,
+            item_file,
+            destination,
+        )
+
+    def _file_moved(self, item_file: Path, destination: Path) -> None:
+        self._log(f"(program) moved {item_file.name} -> {destination.name}")
+
+    def _log(self, message: str) -> None:
+        self.query_one("#log", Log).write_line(f"[debug]::{message}")
+
+# Main application call #
+if (__name__ == "__main__"):
+    FileJanitorApp().run()

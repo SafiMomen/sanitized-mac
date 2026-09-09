@@ -18,6 +18,7 @@ SUPPORTED_SUFFIXES = {
         ".rtf",
         ".odt",
         ".md",
+        ".tex",
     },
     "spreadsheet": {
         ".csv",
