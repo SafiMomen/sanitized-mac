@@ -1,6 +1,4 @@
 from pathlib import Path
-import tkinter
-from tkinter import messagebox
 import shutil
 
 from textual import work
@@ -10,6 +8,7 @@ from textual.widgets import Input, Log, Static
 from sub_directories import SubDirectoriesHandler
 from weak_file_detection import *
 from weak_watchdog import DirectoryWatchdog
+from file_utils import confirm_large_file_move
 from style import WINDOW_STYLING
 
 class FileJanitorApp(App):
@@ -36,21 +35,19 @@ class FileJanitorApp(App):
         yield Static("status: stopped", id="status")
         yield Log(id="log")
 
-    def _confirm_large_file_move(self, item_file: Path, destination: Path) -> bool:
-        file_size_mb = item_file.stat().st_size / (1024 * 1024)
+    def _init_sub_directory_handler(self, parent_folder: Path) -> None :
+        if (not parent_folder.is_dir()):
+            self._log(f"(error) invalid directory: {parent_folder}")
+            return
 
-        root = tkinter.Tk()
-        root.withdraw()
+        sub_directories = ["%sort", "%unknown", "%unsorted"]
+        for file_type, suffixes in SUPPORTED_SUFFIXES.items():
+            sub_directories.append("%" + file_type)
 
-        should_move = messagebox.askyesno(
-            "Large File",
-            (
-                f"{item_file.name} is {file_size_mb:.2f} MB.\n\n"
-                f"Move it to {destination.name}?"
-            ),
+        self._sub_directory_handler = SubDirectoriesHandler(
+            parent_folder,
+            sub_directories,
         )
-        root.destroy()
-        return should_move
 
     def action_sanitize(self) -> None:
         path_input = self.query_one("#path", Input)
@@ -63,19 +60,8 @@ class FileJanitorApp(App):
             sanitizing_path_folder_input
         ).expanduser()
 
-        if (not sanitizing_path_folder.is_dir()):
-            self._log(f"(error) invalid directory: {sanitizing_path_folder}")
-            return
+        self._init_sub_directory_handler(sanitizing_path_folder);
         self._log(f"(program) attempting to sanitize: {sanitizing_path_folder}")
-
-        sub_directories = ["%sort", "%unknown", "%unsorted"]
-        for file_type, suffixes in SUPPORTED_SUFFIXES.items():
-            sub_directories.append("%" + file_type)
-
-        self._sub_directory_handler = SubDirectoriesHandler(
-            sanitizing_path_folder,
-            sub_directories,
-        )
 
         files = [
             item_file
@@ -89,7 +75,7 @@ class FileJanitorApp(App):
             if (is_temporary_item(item_file)): continue
 
             if (item_file.stat().st_size >= self.LARGE_FILE_SIZE):
-                should_move = self._confirm_large_file_move(
+                should_move = confirm_large_file_move(
                     item_file,
                     destination,
                 )
@@ -116,18 +102,7 @@ class FileJanitorApp(App):
             observing_path_folder_input
         ).expanduser()
 
-        if (not observing_path_folder.is_dir()):
-            self._log(f"(error) invalid directory: {observing_path_folder}")
-            return
-
-        sub_directories = ["%sort", "%unknown", "%unsorted"]
-        for file_type, suffixes in SUPPORTED_SUFFIXES.items():
-            sub_directories.append("%" + file_type)
-
-        self._sub_directory_handler = SubDirectoriesHandler(
-            observing_path_folder,
-            sub_directories,
-        )
+        self._init_sub_directory_handler(observing_path_folder)
         self._directory_watchdog = DirectoryWatchdog(
             "%sort",
             self._sub_directory_handler,
