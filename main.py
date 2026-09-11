@@ -3,7 +3,9 @@ import shutil
 
 from textual import work
 from textual.app import App, ComposeResult
-from textual.widgets import Input, Log, Static
+from textual.containers import Horizontal
+from textual.widgets import Button, Input, Log, Static
+from rich.text import Text
 
 from sub_directories import SubDirectoriesHandler
 from weak_file_detection import *
@@ -13,12 +15,12 @@ from style import WINDOW_STYLING
 
 class FileJanitorApp(App):
     CSS = WINDOW_STYLING;
-    BINDINGS = [
-        ("super+s,ctrl+s", "start", "Start"),
-        ("super+e,ctrl+e", "stop", "Stop"),
-        ("ctrl+q", "quit", "Quit"),
-        ("super+l,ctrl+l", "sanitize", "Sanitize")
-    ]
+    # BINDINGS = [
+    #     ("super+s,ctrl+s", "start", "Start"),
+    #     ("super+e,ctrl+e", "stop", "Stop"),
+    #     ("ctrl+q", "quit", "Quit"),
+    #     ("super+l,ctrl+l", "sanitize", "Sanitize")
+    # ]
     # greater than 2 gigabytes is a risk to move 
     # as it can be interrupted and hence corrupted.
     LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024
@@ -31,9 +33,20 @@ class FileJanitorApp(App):
     def compose(self) -> ComposeResult:
         yield Static("sanitized-os\n", id="title")
         yield Input(placeholder="parent directory: ~/Downloads", id="path")
-        yield Static("[⌘S] start   [⌘X] stop   [⌃Q] quit   [⌘L] sanitize\n", id="bindings")
+        with Horizontal(id="controls"):
+            yield Button(Text("[ start ]"), id="start")
+            yield Button(Text("[ stop ]"), id="stop")
+            yield Button(Text("[ quit ]"), id="quit")
         yield Static("status: stopped", id="status")
         yield Log(id="log")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if (event.button.id == "start"):
+            self.action_start()
+        elif (event.button.id == "stop"):
+            self.action_stop()
+        elif (event.button.id == "quit"):
+            self.action_quit()
 
     def _init_sub_directory_handler(self, parent_folder: Path) -> None :
         if (not parent_folder.is_dir()):

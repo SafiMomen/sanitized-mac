@@ -12,6 +12,24 @@ Static, Input, Log {
     border: none;
 }
 
+Button {
+    background: transparent;
+    border: none;
+    min-width: 10;
+    width: auto;
+    padding: 0 1;
+}
+
+Button:hover {
+    background: transparent;
+    text-style: underline;
+}
+
+Button:focus {
+    background: transparent;
+    text-style: reverse;
+}
+
 #title {
     height: 2;
     text-style: bold;
