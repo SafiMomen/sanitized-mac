@@ -15,15 +15,9 @@ from style import WINDOW_STYLING
 
 class FileJanitorApp(App):
     CSS = WINDOW_STYLING;
-    # BINDINGS = [
-    #     ("super+s,ctrl+s", "start", "Start"),
-    #     ("super+e,ctrl+e", "stop", "Stop"),
-    #     ("ctrl+q", "quit", "Quit"),
-    #     ("super+l,ctrl+l", "sanitize", "Sanitize")
-    # ]
     # greater than 2 gigabytes is a risk to move 
     # as it can be interrupted and hence corrupted.
-    LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024
+    LARGE_FILE_SIZE = (2 * 1024 * 1024 * 1024)
 
     def __init__(self) -> None:
         super().__init__()
@@ -36,17 +30,20 @@ class FileJanitorApp(App):
         with Horizontal(id="controls"):
             yield Button(Text("[ start ]"), id="start")
             yield Button(Text("[ stop ]"), id="stop")
+            yield Button(Text("[ sanitize ]"), id="sanitize")
             yield Button(Text("[ quit ]"), id="quit")
         yield Static("status: stopped", id="status")
         yield Log(id="log")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if (event.button.id == "start"):
-            self.action_start()
-        elif (event.button.id == "stop"):
-            self.action_stop()
-        elif (event.button.id == "quit"):
-            self.action_quit()
+        actions_method_map = {
+            "start": self.action_start,
+            "stop": self.action_stop,
+            "sanitize": self.action_sanitize,
+            "quit": self.action_quit
+        }
+        method_callback = actions_method_map.get(event.button.id);
+        if (method_callback): method_callback();
 
     def _init_sub_directory_handler(self, parent_folder: Path) -> None :
         if (not parent_folder.is_dir()):

@@ -7,7 +7,7 @@ Screen {
 }
 
 Static, Input, Log {
-    background: black;
+    background: transparent;
     color: white;
     border: none;
 }
@@ -40,7 +40,7 @@ Button:focus {
     margin-bottom: 1;
 }
 
-#bindings {
+#controls {
     height: 2;
 }
 
