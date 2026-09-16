@@ -50,9 +50,9 @@ class FileJanitorApp(App):
             self._log(f"(error) invalid directory: {parent_folder}")
             return
 
-        sub_directories = ["%sort", "%unknown", "%unsorted"]
+        sub_directories = [".sort", ".unknown", ".unsorted"]
         for file_type, suffixes in SUPPORTED_SUFFIXES.items():
-            sub_directories.append("%" + file_type)
+            sub_directories.append("." + file_type)
 
         self._sub_directory_handler = SubDirectoriesHandler(
             parent_folder,
@@ -80,7 +80,7 @@ class FileJanitorApp(App):
         ]
         for item_file in files:
             file_type = get_file_type(item_file)
-            destination = self._sub_directory_handler.get_sub_directory("%" + file_type)
+            destination = self._sub_directory_handler.get_sub_directory("." + file_type)
 
             if (is_temporary_item(item_file)): continue
 
@@ -114,15 +114,15 @@ class FileJanitorApp(App):
 
         self._init_sub_directory_handler(observing_path_folder)
         self._directory_watchdog = DirectoryWatchdog(
-            "%sort",
+            ".sort",
             self._sub_directory_handler,
             file_processed=self._file_ready_for_processing,
         )
 
         self.query_one("#status", Static).update(
-            f"status: watching {observing_path_folder / '%sort'}"
+            f"status: watching {observing_path_folder / '.sort'}"
         )
-        self._log(f"(program) watching {observing_path_folder / '%sort'}")
+        self._log(f"(program) watching {observing_path_folder / '.sort'}")
 
         self._start_watchdog()
 
@@ -156,7 +156,7 @@ class FileJanitorApp(App):
         if (self._sub_directory_handler is None): return
 
         file_type = get_file_type(item_file)
-        destination = (self._sub_directory_handler.get_sub_directory(("%" + file_type)))
+        destination = (self._sub_directory_handler.get_sub_directory(("." + file_type)))
         shutil.move(item_file, destination)
 
         self.call_from_thread(
