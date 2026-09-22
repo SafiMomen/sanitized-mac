@@ -1,18 +1,34 @@
 WINDOW_STYLING = """
 
+ApplicationTab, 
+ConfigTab {
+    width: 100%;
+    height: 1fr;
+    min-height: 10;
+
+    background: black;
+    color: white;
+    padding: 1 2;
+
+    layout: vertical;
+}
+
 Screen {
     background: black;
     color: white;
     padding: 1 2;
 }
 
-Static, Input, Log {
+ApplicationTab Static,
+ApplicationTab Input,
+ApplicationTab Log {
     background: transparent;
     color: white;
     border: none;
 }
 
-Button {
+ApplicationTab Button,
+ConfigTab Button {
     background: transparent;
     border: none;
     min-width: 10;
@@ -20,36 +36,40 @@ Button {
     padding: 0 1;
 }
 
-Button:hover {
+ApplicationTab Button:hover,
+ConfigTab Button:hover {
     background: transparent;
     text-style: underline;
 }
 
-Button:focus {
+ApplicationTab Button:focus,
+ConfigTab Button:hover {
     background: transparent;
     text-style: reverse;
 }
 
-#title {
+ApplicationTab #title {
     height: 2;
     text-style: bold;
 }
 
-#path {
+ApplicationTab #path {
     height: 3;
     margin-bottom: 1;
 }
 
-#controls {
+ApplicationTab #controls {
     height: 2;
 }
 
-#status {
+ApplicationTab #status {
     height: 2;
 }
 
-#log {
+ApplicationTab #log {
+    height: 1fr;
     padding: 0 1;
 }
+
 
 """
