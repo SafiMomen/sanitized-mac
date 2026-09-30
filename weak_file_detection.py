@@ -6,85 +6,14 @@ helper functions used to classify files based on their filename extension.
 """
 
 from pathlib import Path
+import yaml;
 
-TEMPORARY_SUFFIXES = {
-    ".crdownload",
-    ".download",
-    ".part",
-    ".partial",
-    ".tmp",
-    ".temp",
-}
+DEFAULT_FILE_TYPES = Path("default.yaml");
+with DEFAULT_FILE_TYPES.open("r") as default_file_types:
+    file_types = yaml.safe_load(default_file_types);
 
-SUPPORTED_SUFFIXES = {
-    "document": {
-        ".pdf",
-        ".txt",
-        ".doc",
-        ".docx",
-        ".rtf",
-        ".odt",
-        ".md",
-        ".tex",
-    },
-    "spreadsheet": {
-        ".csv",
-        ".xls",
-        ".xlsx",
-        ".ods",
-    },
-    "presentation": {
-        ".ppt",
-        ".pptx",
-        ".odp",
-    },
-    "image": {
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".webp",
-        ".heic",
-        ".bmp",
-        ".tiff",
-        ".tif",
-        ".svg",
-    },
-    "audio": {
-        ".mp3",
-        ".wav",
-        ".aac",
-        ".flac",
-        ".m4a",
-        ".ogg",
-        ".opus",
-    },
-    "video": {
-        ".mp4",
-        ".mov",
-        ".avi",
-        ".mkv",
-        ".webm",
-        ".m4v",
-    },
-    "archive": {
-        ".zip",
-        ".tar",
-        ".gz",
-        ".rar",
-        ".7z",
-        ".bz2",
-        ".xz",
-    },
-    "installer": {
-        ".dmg",
-        ".pkg",
-        ".exe",
-        ".msi",
-        ".deb",
-        ".rpm",
-    },
-}
+TEMPORARY_SUFFIXES = file_types["temporary_suffixes"];
+SUPPORTED_SUFFIXES = file_types["supported_suffixes"];
 
 """
 Determine whether a filesystem item should be considered temporary.
@@ -103,6 +32,26 @@ def is_temporary_item(item: Path) -> bool:
     return item.suffix.lower() in TEMPORARY_SUFFIXES
 
 """
+Determine the category associated with a file's extension.
+
+The file suffix is normalized to lowercase and compared against the
+suffixes registered in SUPPORTED_SUFFIXES. Files without an extension or
+without a matching category are classified as unknown.
+
+@param item (Path): File whose category should be determined.
+
+@return (str): Supported file category associated with the file, or
+"unknown" when no supported category can be determined.
+"""
+def get_file_type(item: Path) -> str:
+    suffix = item.suffix.lower()
+    if (not suffix): return "unknown"
+    #TODO: use datastructures to make this search faster. 
+    for file_type, suffixes in SUPPORTED_SUFFIXES.items():
+        if (suffix in suffixes): return file_type;
+    return ("unknown")
+
+"""
 Determine whether a file belongs to an unsupported file category.
 
 @param item (Path): File whose type should be evaluated.
@@ -112,12 +61,3 @@ otherwise False.
 """
 def is_unknown_item_type(item: Path) -> bool:
     return get_file_type(item) == "unknown"
-
-
-def get_file_type(item: Path) -> str:
-    suffix = item.suffix.lower()
-    if (not suffix): return "unknown"
-    #TODO: use datastructures to make this search faster. 
-    for file_type, suffixes in SUPPORTED_SUFFIXES.items():
-        if (suffix in suffixes): return file_type;
-    return ("unknown")
