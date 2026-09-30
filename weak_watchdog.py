@@ -1,3 +1,13 @@
+"""
+Directory polling and file readiness utilities for Sanitized-Mac.
+
+This module defines a lightweight directory watchdog responsible for polling
+a managed sub-directory, detecting files that appear stable and safe to
+process, and forwarding those files to a configured processing callback.
+
+The official watchdog library might be too heavy for simple application.
+"""
+
 from pathlib import Path;
 from collections.abc import Callable;
 import time
@@ -5,7 +15,27 @@ import time
 from sub_directories import SubDirectoriesHandler
 from weak_file_detection import *
 
+"""
+Monitor a managed sub-directory for files that are ready for processing.
+
+The watchdog periodically scans a configured directory and filters out
+directories, temporary files, unsupported file types, and files that
+appear to still be changing.
+
+Files that pass all readiness checks are forwarded to the configured
+file-processing callback.
+"""
 class DirectoryWatchdog:
+    """
+    Initialize the directory watchdog.
+
+    @param observing_directory_name (str): Name of the managed
+    sub-directory that should be monitored.
+    @param directory_handler (SubDirectoriesHandler): Handler responsible
+    for creating and resolving managed sub-directories.
+    @param file_processed (Callable[[Path], None]): Callback invoked for
+    each file determined to be ready for processing.
+    """
     def __init__(
         self,
         observing_directory_name: str,
@@ -18,6 +48,21 @@ class DirectoryWatchdog:
         self._program_running = False;
         self._previous_file_states: dict[Path, tuple[int, float]] = {};
 
+    """
+    Determine whether a file has remained unchanged between polling cycles.
+
+    File stability is determined by comparing the current file size and
+    modification timestamp against the values recorded during the previous
+    polling cycle.
+
+    A file that has not previously been observed is considered unstable
+    until a subsequent poll confirms that its state has not changed.
+
+    @param item (Path): File whose stability should be evaluated.
+
+    @return (bool): True if the file size and modification timestamp are
+    unchanged since the previous poll, otherwise False.
+    """
     def is_file_stable(self, item: Path) -> bool:
         try:
             file_stats = item.stat()
@@ -38,6 +83,14 @@ class DirectoryWatchdog:
 
         return (previous_state == current_state)
 
+    """
+    Remove stored state for items no longer present in the watched directory.
+
+    Prevents the internal file-state collection from retaining information
+    about files that have already been moved, deleted, or otherwise removed.
+
+    @param children (list[Path]): Current contents of the watched directory.
+    """
     def _remove_stale_file_states(self, children: list[Path]) -> None:
         current_items = set(children)
 
@@ -50,6 +103,18 @@ class DirectoryWatchdog:
         for path in stale_items:
             del self._previous_file_states[path]
 
+    """
+    Scan a directory and identify files that are ready for processing.
+
+    Directories, missing items, temporary files, unsupported file types,
+    and unstable files are excluded from the returned collection.
+
+    @param directory (Path): Directory whose immediate contents should be
+    inspected.
+
+    @return (list[Path]): Files that passed all readiness checks and may
+    safely be forwarded for processing.
+    """
     def _scan_directory(self, directory: Path) -> list[Path]:
         try:
             children = list(directory.iterdir())
@@ -79,6 +144,15 @@ class DirectoryWatchdog:
             ready_files.append(item)
         return ready_files
 
+    """
+    Perform a single polling cycle on the configured directory.
+
+    Ensures that the watched sub-directory exists, resolves its path, and
+    scans its contents for files that are ready for processing.
+
+    @return (list[Path]): Files determined to be ready during the current
+    polling cycle.
+    """
     def poll_once(self) -> list[Path]:
         self._directory_handler.process_sub_directory(
             self._observing_directory_name
@@ -88,6 +162,16 @@ class DirectoryWatchdog:
         )
         return self._scan_directory(directory)
 
+    """
+    Continuously poll the configured directory for processable files.
+
+    Each polling cycle identifies ready files and forwards them to the
+    configured processing callback. Polling continues until stop_polling()
+    is called or the process receives a keyboard interruption.
+
+    @param interval (float): Number of seconds to wait between polling
+    cycles.
+    """
     def start_polling(self, interval: float = 2.0) -> None:
         self._program_running = True
         #TODO: handle asynchronux operation so that it can run the background of computer. 
@@ -104,5 +188,11 @@ class DirectoryWatchdog:
         finally:
             self._program_running = False
 
+    """
+    Request termination of the active polling loop.
+
+    The polling loop exits after the current cycle completes and evaluates
+    the updated running state.
+    """
     def stop_polling(self) -> None:
         self._program_running = False

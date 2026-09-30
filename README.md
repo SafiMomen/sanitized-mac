@@ -12,8 +12,6 @@ Sanitized Mac helps keep your filesystem organized by distinguishing supported f
 - Recognize common document, image, audio, video, and archive formats.
 - Detect temporary and incomplete download files.
 - Ignore hidden macOS and Unix files, such as `.DS_Store`.
-- Identify files with unsupported or missing extensions.
-- Support case-insensitive file extension matching.
 
 ## Installation
 

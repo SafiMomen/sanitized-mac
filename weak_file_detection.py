@@ -1,3 +1,10 @@
+"""
+File type detection utilities for Sanitized-Mac.
+
+This module defines supported file categories, temporary file suffixes, and
+helper functions used to classify files based on their filename extension.
+"""
+
 from pathlib import Path
 
 TEMPORARY_SUFFIXES = {
@@ -79,14 +86,30 @@ SUPPORTED_SUFFIXES = {
     },
 }
 
+"""
+Determine whether a filesystem item should be considered temporary.
 
+Hidden files and files using a known temporary download or processing
+suffix are considered temporary and should not be processed normally.
+
+@param item (Path): Filesystem item to inspect.
+
+@return (bool): True if the item is considered temporary, otherwise False.
+"""
 def is_temporary_item(item: Path) -> bool:
     if item.name.startswith("."):
         return True
 
     return item.suffix.lower() in TEMPORARY_SUFFIXES
 
+"""
+Determine whether a file belongs to an unsupported file category.
 
+@param item (Path): File whose type should be evaluated.
+
+@return (bool): True if the file cannot be mapped to a supported category,
+otherwise False.
+"""
 def is_unknown_item_type(item: Path) -> bool:
     return get_file_type(item) == "unknown"
 
