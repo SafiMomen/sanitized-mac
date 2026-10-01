@@ -34,6 +34,8 @@ class ApplicationTab(Widget):
     """
     greater than 2 gigabytes is a risk to move 
     as it can be interrupted and hence corrupted.
+
+    Note: this is highly unlikely, and mostly done as a safe gaurd.
     """
     LARGE_FILE_SIZE = (2 * 1024 * 1024 * 1024)
 

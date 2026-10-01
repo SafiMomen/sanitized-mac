@@ -20,6 +20,7 @@ Screen {
 }
 
 ApplicationTab Static,
+ConfigTab Static,
 ApplicationTab Input,
 ApplicationTab Log {
     background: transparent;
@@ -34,6 +35,7 @@ ConfigTab Button {
     min-width: 10;
     width: auto;
     padding: 0 1;
+    color: white;
 }
 
 ApplicationTab Button:hover,
@@ -43,12 +45,11 @@ ConfigTab Button:hover {
 }
 
 ApplicationTab Button:focus,
-ConfigTab Button:hover {
+ConfigTab Button:focus {
     background: transparent;
-    text-style: reverse;
 }
 
-ApplicationTab #title {
+ApplicationTab #title, ConfigTab #title {
     height: 2;
     text-style: bold;
 }
