@@ -1,11 +1,3 @@
-temporary_suffixes:
-  - .crdownload
-  - .download
-  - .part
-  - .partial
-  - .tmp
-  - .temp
-
 supported_suffixes:
   document:
     - .pdf

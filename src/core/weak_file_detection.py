@@ -8,16 +8,18 @@ helper functions used to classify files based on their filename extension.
 from pathlib import Path
 import yaml;
 
-DEFAULT_FILE_TYPES = (
-    Path(__file__).resolve().parent.parent
-    / "config"
-    / "default.yaml"
-);
-with DEFAULT_FILE_TYPES.open("r") as default_file_types:
-    file_types = yaml.safe_load(default_file_types);
+CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+CONFIG_FILE = CONFIG_DIR / "config.yaml"
+FILE_TYPES_FILE = CONFIG_DIR / "file_types.yaml"
 
-TEMPORARY_SUFFIXES = file_types["temporary_suffixes"];
-SUPPORTED_SUFFIXES = file_types["supported_suffixes"];
+with CONFIG_FILE.open("r") as file:
+    config = yaml.safe_load(file)
+
+with FILE_TYPES_FILE.open("r") as file:
+    file_types = yaml.safe_load(file)
+
+TEMPORARY_SUFFIXES = config["temporary_suffixes"]
+SUPPORTED_SUFFIXES = file_types["supported_suffixes"]
 
 """
 Determine whether a filesystem item should be considered temporary.

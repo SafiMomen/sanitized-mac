@@ -1,0 +1,7 @@
+temporary_suffixes:
+  - .crdownload
+  - .download
+  - .part
+  - .partial
+  - .tmp
+  - .temp
