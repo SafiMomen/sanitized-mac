@@ -16,11 +16,11 @@ from textual.containers import Horizontal
 from textual.widgets import Button, Input, Log, Static
 from rich.text import Text
 
-from sub_directories import SubDirectoriesHandler
-from weak_file_detection import *
-from weak_watchdog import DirectoryWatchdog
-from file_utils import confirm_large_file_move
-from style import WINDOW_STYLING
+from src.core.sub_directories import SubDirectoriesHandler
+from src.core.weak_file_detection import *
+from src.core.weak_watchdog import DirectoryWatchdog
+from src.core.file_utils import confirm_large_file_move
+from src.interface.style import WINDOW_STYLING
 
 class ApplicationTab(Widget):
     """

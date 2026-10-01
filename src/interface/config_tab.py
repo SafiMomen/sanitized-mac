@@ -3,7 +3,7 @@ from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import Static, Button
 
-from style import WINDOW_STYLING
+from src.interface.style import WINDOW_STYLING
 
 class ConfigTab(Widget):
     DEFAULT_CSS = WINDOW_STYLING;

@@ -8,10 +8,10 @@ between the application's main interface and configuration interface.
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, TabbedContent, TabPane
 
-from application_tab import ApplicationTab;
-from config_tab import ConfigTab;
+from src.interface.application_tab import ApplicationTab;
+from src.interface.config_tab import ConfigTab;
 
-from style import *;
+from src.interface.style import *;
 
 class FileJanitorApp(App):
     """

@@ -12,8 +12,8 @@ from pathlib import Path;
 from collections.abc import Callable;
 import time
 
-from sub_directories import SubDirectoriesHandler
-from weak_file_detection import *
+from src.core.sub_directories import SubDirectoriesHandler
+from src.core.weak_file_detection import *
 
 """
 Monitor a managed sub-directory for files that are ready for processing.

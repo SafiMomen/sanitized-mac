@@ -8,7 +8,11 @@ helper functions used to classify files based on their filename extension.
 from pathlib import Path
 import yaml;
 
-DEFAULT_FILE_TYPES = Path("default.yaml");
+DEFAULT_FILE_TYPES = (
+    Path(__file__).resolve().parent.parent
+    / "config"
+    / "default.yaml"
+);
 with DEFAULT_FILE_TYPES.open("r") as default_file_types:
     file_types = yaml.safe_load(default_file_types);
 
@@ -49,7 +53,7 @@ def get_file_type(item: Path) -> str:
     #TODO: use datastructures to make this search faster. 
     for file_type, suffixes in SUPPORTED_SUFFIXES.items():
         if (suffix in suffixes): return file_type;
-    return ("unknown")
+    return ("unknown");
 
 """
 Determine whether a file belongs to an unsupported file category.
