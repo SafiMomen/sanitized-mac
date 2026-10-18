@@ -8,6 +8,8 @@ may require explicit user approval before proceeding.
 import tkinter
 from tkinter import messagebox
 from pathlib import Path
+from collections.abc import Callable
+from textual.widgets import Input
 
 """
 Request user confirmation before moving a large file.
@@ -36,3 +38,29 @@ def confirm_large_file_move(item_file: Path, destination: Path) -> bool:
     )
     root.destroy()
     return should_move
+
+"""
+Resolve a filesystem path from a Textual input widget.
+
+If the input contains no path, the supplied failure callback is invoked
+with an error message and no path is returned.
+
+@param path_input (Input): Textual input widget containing the filesystem
+path supplied by the user.
+@param failure (Callable[[str], None]): Callback invoked when the input is
+empty. The callback receives an error message describing the failure.
+
+@return (Path | None): Expanded filesystem path when valid input is
+provided, otherwise None.
+"""
+def get_path_from_input(
+        path_input: Input, 
+        failure: Callable[[], None] | None 
+) -> Path | None:
+    path_folder_input = path_input.value.strip()
+
+    if (path_folder_input):
+        return Path(path_folder_input).expanduser();
+
+    if (failure == None): return None; 
+    failure("(error) enter a parent directory")

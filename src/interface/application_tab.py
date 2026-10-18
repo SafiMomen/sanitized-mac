@@ -19,7 +19,7 @@ from rich.text import Text
 from src.core.sub_directories import SubDirectoriesHandler
 from src.core.weak_file_detection import *
 from src.core.weak_watchdog import DirectoryWatchdog
-from src.core.file_utils import confirm_large_file_move
+from src.core.file_utils import *
 from src.interface.style import WINDOW_STYLING
 
 class ApplicationTab(Widget):
@@ -116,15 +116,12 @@ class ApplicationTab(Widget):
     """
     def action_sanitize(self) -> None:
         path_input = self.query_one("#path", Input)
-        sanitizing_path_folder_input = path_input.value.strip()
-        if (not sanitizing_path_folder_input):
-            self._log("(error) enter a parent directory")
-            return
-
-        sanitizing_path_folder = Path(
-            sanitizing_path_folder_input
-        ).expanduser()
-
+        sanitizing_path_folder = get_path_from_input(
+            path_input=path_input, 
+            failure=self._log
+        );
+        if (sanitizing_path_folder == None): return None;
+    
         self._init_sub_directory_handler(sanitizing_path_folder);
         self._log(f"(program) attempting to sanitize: {sanitizing_path_folder}")
 

@@ -22,6 +22,7 @@ Screen {
 ApplicationTab Static,
 ConfigTab Static,
 ApplicationTab Input,
+ConfigTab Input,
 ApplicationTab Log {
     background: transparent;
     color: white;
@@ -57,6 +58,11 @@ ApplicationTab #title, ConfigTab #title {
 ApplicationTab #path {
     height: 3;
     margin-bottom: 1;
+}
+
+ConfigTab #process-path {
+    height: 3;
+    margin-top: 2;
 }
 
 ApplicationTab #controls {
